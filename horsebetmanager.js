@@ -71,56 +71,68 @@ def handle_session_end_request():
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
+def get_latest_race():
+    # CALL ENDPOINT TO RETRIEVE LATEST RACE
+    return
 
-def create_favorite_color_attributes(favorite_color):
-    return {"favoriteColor": favorite_color}
-
-
-def set_color_in_session(intent, session):
-    """ Sets the color in the session and prepares the speech to reply to the
-    user.
-    """
-
-    card_title = intent['name']
-    session_attributes = {}
+def get_race_info(intent, session):
+    session_attributes = session.get('attributes', {})
+    reprompt_text = None
     should_end_session = False
 
-    if 'Color' in intent['slots']:
-        favorite_color = intent['slots']['Color']['value']
-        session_attributes = create_favorite_color_attributes(favorite_color)
-        speech_output = "I now know your favorite color is " + \
-                        favorite_color + \
-                        ". You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-        reprompt_text = "You can ask me your favorite color by saying, " \
-                        "what's my favorite color?"
-    else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite color is. " \
-                        "You can tell me your favorite color by saying, " \
-                        "my favorite color is red."
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+    latest_race = get_latest_race()
+    speech_output = "The next race is race number {}. " \ 
+                    "It starts at {} and ends at {}".format(latest_race['race_number'],
+                                                            latest_race['start_time'],
+                                                            latest_race['end_time'])
 
-
-def get_color_from_session(intent, session):
-    session_attributes = {}
-    reprompt_text = None
-
-    if session.get('attributes', {}) and "favoriteColor" in session.get('attributes', {}):
-        favorite_color = session['attributes']['favoriteColor']
-        speech_output = "Your favorite color is " + favorite_color + \
-                        ". Goodbye."
-        should_end_session = True
-    else:
-        speech_output = "I'm not sure what your favorite color is. " \
-                        "You can say, my favorite color is red."
-        should_end_session = False
-
+    seesion_attributes["latestRace"] = latest_race
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
     # understood, the session will end.
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
+
+def get_horse_info(intent, session):
+    return
+
+def get_horse_odds(intent, session):
+    return
+
+def place_bet(intent, session):
+    session_attributes = session.get('attributes', {})
+    should_end_session = False
+    if 'Amount' not in intent['slots']:
+        speech_output = "I'm not sure what amount you are trying to bet. " \
+                        "Please try again."
+        reprompt_text = "I'm not sure what amount you are trying to bet. " \
+                        "You can place a bet by saying, " \ 
+                        "Place two ethereum on horse three and race five."
+    elif 'Horse' not in intent['slots']:
+        speech_output = "I'm not sure what horse you are trying to bet on. " \
+                        "Please try again."
+        reprompt_text = "I'm not sure what horse you are trying to bet on. " \
+                        "You can place a bet by saying, " \ 
+                        "Place two ethereum on horse three and race five."
+    elif 'Race' not in intent['slots']:
+        speech_output = "I'm not sure what race you are trying to bet on. " \
+                        "Please try again."
+        reprompt_text = "I'm not sure what race you are trying to bet on. " \
+                        "You can place a bet by saying, " \ 
+                        "Place two ethereum on horse three and race five."
+    else:
+        amount = intent['slots']['Amount']['value']
+        horse = intent['slots']['Horse']['value']
+        race = intent['slots']['Race']['value']
+        session_attributes["currentBet"] = {"amount": amount, "horse": horse, "race": race}
+        speech_output = "Placing {} ethereum on horse {} and race {}."
+        reprompt_text = None
+        # Store bet in database, or Place bet on the smart contract
+
+        # speech_output = "Are you sure you want to place {} ethereum on horse {} and race {}?"
+        # reprompt_text = "Are you sure you want to place {} ethereum on horse {} and race {}? " \
+        #                 "Say Yes to confirm."
+        # TODO: implement confirmation step for security
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
@@ -156,13 +168,13 @@ def on_intent(intent_request, session):
 
     # Dispatch to your skill's intent handlers
     if intent_name == "PlaceBetIntent":
-        return set_color_in_session(intent, session)
+        return place_bet(intent, session)
     elif intent_name == "RaceInfoIntent":
-        return get_color_from_session(intent, session)
+        return get_race_info(intent, session)
     elif intent_name == "HorseInfoIntent":
-        return get_color_from_session(intent, session)
+        return get_horse_info(intent, session)
     elif intent_name == "HorseOddsIntent":
-        return get_color_from_session(intent, session)
+        return get_horse_odds(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
