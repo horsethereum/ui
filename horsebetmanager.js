@@ -81,10 +81,8 @@ def get_race_info(intent, session):
     should_end_session = False
 
     latest_race = get_latest_race()
-    speech_output = "The next race is race number {}. " \ 
-                    "It starts at {} and ends at {}".format(latest_race['race_number'],
-                                                            latest_race['start_time'],
-                                                            latest_race['end_time'])
+    speech_output = "The next race is race number {}. It starts at {} and ends at {}".format(latest_race['race_number'],
+        latest_race['start_time'], latest_race['end_time'])
 
     seesion_attributes["latestRace"] = latest_race
     # Setting reprompt_text to None signifies that we do not want to reprompt
@@ -106,26 +104,23 @@ def place_bet(intent, session):
         speech_output = "I'm not sure what amount you are trying to bet. " \
                         "Please try again."
         reprompt_text = "I'm not sure what amount you are trying to bet. " \
-                        "You can place a bet by saying, " \ 
-                        "Place two ethereum on horse three and race five."
+                        "You can place a bet by saying, place two ethereum on horse three and race five."
     elif 'Horse' not in intent['slots']:
         speech_output = "I'm not sure what horse you are trying to bet on. " \
                         "Please try again."
         reprompt_text = "I'm not sure what horse you are trying to bet on. " \
-                        "You can place a bet by saying, " \ 
-                        "Place two ethereum on horse three and race five."
+                        "You can place a bet by saying, place two ethereum on horse three and race five."
     elif 'Race' not in intent['slots']:
         speech_output = "I'm not sure what race you are trying to bet on. " \
                         "Please try again."
         reprompt_text = "I'm not sure what race you are trying to bet on. " \
-                        "You can place a bet by saying, " \ 
-                        "Place two ethereum on horse three and race five."
+                        "You can place a bet by saying, place two ethereum on horse three and race five."
     else:
         amount = intent['slots']['Amount']['value']
         horse = intent['slots']['Horse']['value']
         race = intent['slots']['Race']['value']
         session_attributes["currentBet"] = {"amount": amount, "horse": horse, "race": race}
-        speech_output = "Placing {} ethereum on horse {} and race {}."
+        speech_output = "Placing {} ethereum on horse {} and race {}.".format(amount, horse, race)
         reprompt_text = None
         # Store bet in database, or Place bet on the smart contract
 
