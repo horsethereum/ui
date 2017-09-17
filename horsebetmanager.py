@@ -8,7 +8,11 @@ http://amzn.to/1LGWsLG
 """
 
 from __future__ import print_function
+import urllib2
+import urllib
+import json
 
+url = "http://a7fcd589.ngrok.io"
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -50,6 +54,12 @@ def build_response(session_attributes, speechlet_response):
 
 
 # --------------- Functions that control the skill's behavior ------------------
+
+def validate_user(session):
+    user = session['user']['userId']
+    content = urllib2.urlopen(url + "/profile?user_id="+str(user)).read()
+    print(content)
+
 
 def get_welcome_response():
     """ If we wanted to initialize the session to have some attributes we could
@@ -132,6 +142,13 @@ def place_bet(request, session):
     speech_output = "Placing {} ethereum on horse {} and race {}.".format(amount, horse, race)
     reprompt_text = None
     # Store bet in database, or Place bet on the smart contract
+    endpoint = url + "/races/"+str(race)+"/bets"
+    user = session['user']['userId']
+    data = urllib.urlencode({'horse_id': horse, 'user_id': user, 'amount': amount})
+    print(endpoint)
+    print(data)
+    content = urllib2.urlopen(url=endpoint, data=data).read()
+    print(content)
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
@@ -161,7 +178,7 @@ def on_intent(intent_request, session):
 
     print("on_intent requestId=" + intent_request['requestId'] +
           ", sessionId=" + session['sessionId'])
-
+    validate_user(session)
     intent = intent_request['intent']
     intent_name = intent_request['intent']['name']
 
