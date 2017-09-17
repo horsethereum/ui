@@ -1,0 +1,36 @@
+{
+  "intents": [
+    {
+      "intent": "PlaceBetIntent",
+      "slots": [
+        {
+          "name": "Amount",
+          "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "Horse",
+          "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "Race",
+          "type": "AMAZON.NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "RaceInfoIntent"
+    },
+    {
+      "intent": "HorseInfoIntent"
+    },
+    {
+      "intent": "HorseOddsIntent"
+    },
+    {
+      "intent": "WhatResultsIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    }
+  ]
+}

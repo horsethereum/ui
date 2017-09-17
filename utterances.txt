@@ -1,0 +1,5 @@
+PlaceBetIntent Place {Amount} ethereum on horse {Horse} and race {Race}
+RaceInfoIntent What is the next race
+HorseInfoIntent What horses are racing
+HorseOddsIntent What are the odds
+WhatResultsIntent What are the results
