@@ -1,36 +1,167 @@
 {
   "intents": [
     {
-      "intent": "PlaceBetIntent",
+      "name": "AMAZON.CancelIntent",
+      "samples": []
+    },
+    {
+      "name": "AMAZON.HelpIntent",
+      "samples": []
+    },
+    {
+      "name": "AMAZON.StopIntent",
+      "samples": []
+    },
+    {
+      "name": "HorseInfoIntent",
+      "samples": [
+        "What horses are racing"
+      ],
+      "slots": []
+    },
+    {
+      "name": "HorseOddsIntent",
+      "samples": [
+        "What are the odds"
+      ],
+      "slots": []
+    },
+    {
+      "name": "PlaceBetIntent",
+      "samples": [
+        "Place {Amount} ether on horse {Horse} in race {Race}",
+        "I'm feeling lucky today",
+        "I need money",
+        "I want to bet"
+      ],
       "slots": [
         {
-          "name": "Amount",
-          "type": "AMAZON.NUMBER"
+          "name": "Race",
+          "type": "AMAZON.NUMBER",
+          "samples": [
+            "Race number {Race}",
+            "Race {Race}"
+          ]
         },
         {
           "name": "Horse",
-          "type": "AMAZON.NUMBER"
+          "type": "AMAZON.NUMBER",
+          "samples": [
+            "Horse {Horse}",
+            "Horse number {Horse}"
+          ]
         },
         {
-          "name": "Race",
-          "type": "AMAZON.NUMBER"
+          "name": "Amount",
+          "type": "AMAZON.NUMBER",
+          "samples": [
+            "{Amount} ether",
+            "Place {Amount} ether",
+            "{Amount} "
+          ]
         }
       ]
     },
     {
-      "intent": "RaceInfoIntent"
+      "name": "RaceInfoIntent",
+      "samples": [
+        "What is the next race"
+      ],
+      "slots": []
     },
     {
-      "intent": "HorseInfoIntent"
-    },
-    {
-      "intent": "HorseOddsIntent"
-    },
-    {
-      "intent": "WhatResultsIntent"
-    },
-    {
-      "intent": "AMAZON.HelpIntent"
+      "name": "WhatResultsIntent",
+      "samples": [
+        "What are the results"
+      ],
+      "slots": []
     }
-  ]
+  ],
+  "prompts": [
+    {
+      "id": "Confirm.Intent-PlaceBetIntent",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "I'm placing {Amount} ether on horse {Horse} in race {Race}. Is that OK?"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-PlaceBetIntent.IntentSlot-Race",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "Which race do you want to bet on?"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-PlaceBetIntent.IntentSlot-Horse",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "What horse would you like to bet on?"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-PlaceBetIntent.IntentSlot-Amount",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "How much ether would you like to place on that bet?"
+        }
+      ]
+    }
+  ],
+  "dialog": {
+    "version": "1.0",
+    "intents": [
+      {
+        "name": "PlaceBetIntent",
+        "confirmationRequired": true,
+        "prompts": {
+          "confirm": "Confirm.Intent-PlaceBetIntent"
+        },
+        "slots": [
+          {
+            "name": "Race",
+            "type": "AMAZON.NUMBER",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-PlaceBetIntent.IntentSlot-Race"
+            }
+          },
+          {
+            "name": "Horse",
+            "type": "AMAZON.NUMBER",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-PlaceBetIntent.IntentSlot-Horse"
+            }
+          },
+          {
+            "name": "Amount",
+            "type": "AMAZON.NUMBER",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-PlaceBetIntent.IntentSlot-Amount"
+            }
+          }
+        ]
+      }
+    ]
+  }
 }
