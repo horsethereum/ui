@@ -20,13 +20,6 @@
       "slots": []
     },
     {
-      "name": "HorseOddsIntent",
-      "samples": [
-        "What are the odds"
-      ],
-      "slots": []
-    },
-    {
       "name": "PlaceBetIntent",
       "samples": [
         "Place {Amount} ether on horse {Horse} in race {Race}",
@@ -61,6 +54,15 @@
           ]
         }
       ]
+    },
+    {
+      "name": "ProfitIntent",
+      "samples": [
+        "What is my profit",
+        "How much mullah did I make",
+        "Am I rolling on gold"
+      ],
+      "slots": []
     },
     {
       "name": "RaceInfoIntent",
