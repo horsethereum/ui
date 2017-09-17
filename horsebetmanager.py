@@ -103,13 +103,13 @@ def get_race_info(intent, session):
     minute = parsed_start.minute
 
     if 1 <= int(minute) <= 10:
-        speech_output = "The next race is race number {}. It starts at {} oh {}.".format(next_race['race_id'],
+        speech_output = "The next race is race number {}. It starts at {} oh {}.".format(next_race['id'],
             hour, minute)
     elif int(minute) == 0:
-        speech_output = "The next race is race number {}. It starts at {} oh clock.".format(next_race['race_id'],
+        speech_output = "The next race is race number {}. It starts at {} oh clock.".format(next_race['id'],
             hour)
     else:
-        speech_output = "The next race is race number {}. It starts at {} {}.".format(next_race['race_id'],
+        speech_output = "The next race is race number {}. It starts at {} {}.".format(next_race['id'],
             hour, minute)
 
     session_attributes["nextRace"] = next_race
@@ -124,7 +124,7 @@ def get_horse_info(intent, session):
     reprompt_text = None
     should_end_session = False
 
-    race_number = session_attributes["nextRace"]['race_id']
+    race_number = session_attributes["nextRace"]['id']
     horse_response = json.load(urllib2.urlopen(url+"/races/"+str(race_number)+"/horses"))
 
 
