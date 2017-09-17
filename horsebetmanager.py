@@ -8,7 +8,12 @@ http://amzn.to/1LGWsLG
 """
 
 from __future__ import print_function
+import urllib2
+import urllib
+import json
+import dateutil.parser
 
+url = "http://a7fcd589.ngrok.io"
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -32,6 +37,14 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
         'shouldEndSession': should_end_session
     }
 
+def build_speechlet_response_with_directive_no_intent():
+    return {
+        'outputSpeech': None,
+        'card': None,
+        'reprompt': None,
+        "directives" : [ {"type" : "Dialog.Delegate"} ],
+        'shouldEndSession': False
+    }
 
 def build_response(session_attributes, speechlet_response):
     return {
@@ -42,6 +55,12 @@ def build_response(session_attributes, speechlet_response):
 
 
 # --------------- Functions that control the skill's behavior ------------------
+
+def validate_user(session):
+    user = session['user']['userId']
+    content = urllib2.urlopen(url + "/profile?user_id="+str(user)).read()
+    print(content)
+
 
 def get_welcome_response():
     """ If we wanted to initialize the session to have some attributes we could
@@ -71,20 +90,29 @@ def handle_session_end_request():
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
-def get_next_race():
-    # CALL ENDPOINT TO RETRIEVE next RACE
-    return
 
 def get_race_info(intent, session):
     session_attributes = session.get('attributes', {})
     reprompt_text = None
     should_end_session = False
 
-    next_race = get_next_race()
-    speech_output = "The next race is race number {}. It starts at {} and ends at {}".format(next_race['race_number'],
-        next_race['start_time'], next_race['end_time'])
+    next_race = json.load(urllib2.urlopen(url + "/next_race"))
 
-    seesion_attributes["nextRace"] = next_race
+    parsed_start = dateutil.parser.parse(next_race['start_time'])
+    hour = parsed_start.hour
+    minute = parsed_start.minute
+
+    if 1 <= int(minute) <= 10:
+        speech_output = "The next race is race number {}. It starts at {} oh {}.".format(next_race['race_number'],
+            hour, minute)
+    elif int(minute) == 0:
+        speech_output = "The next race is race number {}. It starts at {} oh clock.".format(next_race['race_number'],
+            hour)
+    else:
+        speech_output = "The next race is race number {}. It starts at {} {}.".format(next_race['race_number'],
+            hour, minute)
+
+    session_attributes["nextRace"] = next_race
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
     # understood, the session will end.
@@ -93,54 +121,45 @@ def get_race_info(intent, session):
 
 def get_horse_info(intent, session):
     session_attributes = session.get('attributes', {})
+    reprompt_text = None
     should_end_session = False
 
-    if 'Race' not in intent['slots']:
-        speech_output = "I'm not sure which race you want information on." \
-                        "Please try again."
-        reprompt_text = "I'm not sure which race you want information on." \
-                        "You can check race information by asking, Which horses are in race 3?"
+    race_number = session_attributes["nextRace"]['race_number']
+    horse_response = json.load(urllib2.urlopen(url+"/races/"+str(race_number)+"/horses"))
 
-    next_race = get_next_race()
-    speech_output = "The horses in race number {} are {}.".format(next_race['race_number'], next_race['horse_list']) 
+    
+    speech_output = "For race number {}, the horses are ".format(race_number)
 
+    for horse in horse_response:
+        speech_output = speech_output + "number {}. {} with {} odds. ".format(horse['id'],horse['name'],horse['odds'])
 
-    return
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
 
-def get_horse_odds(intent, session):
-    return
-
-def place_bet(intent, session):
+def place_bet(request, session):
     session_attributes = session.get('attributes', {})
     should_end_session = False
-    if 'Amount' not in intent['slots']:
-        speech_output = "I'm not sure what amount you are trying to bet. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what amount you are trying to bet. " \
-                        "You can place a bet by saying, place two ether on horse three in race five."
-    elif 'Horse' not in intent['slots']:
-        speech_output = "I'm not sure what horse you are trying to bet on. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what horse you are trying to bet on. " \
-                        "You can place a bet by saying, place two ether on horse three in race five."
-    elif 'Race' not in intent['slots']:
-        speech_output = "I'm not sure what race you are trying to bet on. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what race you are trying to bet on. " \
-                        "You can place a bet by saying, place two ether on horse three in race five."
-    else:
-        amount = intent['slots']['Amount']['value']
-        horse = intent['slots']['Horse']['value']
-        race = intent['slots']['Race']['value']
-        session_attributes["currentBet"] = {"amount": amount, "horse": horse, "race": race}
-        speech_output = "Placing {} ethereum on horse {} and race {}.".format(amount, horse, race)
-        reprompt_text = None
-        # Store bet in database, or Place bet on the smart contract
-
-        # speech_output = "Are you sure you want to place {} ethereum on horse {} and race {}?"
-        # reprompt_text = "Are you sure you want to place {} ethereum on horse {} and race {}? " \
-        #                 "Say Yes to confirm."
-        # TODO: implement confirmation step for security
+    intent = request['intent']
+    if request['dialogState'] == 'STARTED':
+        return build_response(session_attributes,
+         build_speechlet_response_with_directive_no_intent())
+    if request['dialogState'] != 'COMPLETED':
+        return build_response(session_attributes,
+         build_speechlet_response_with_directive_no_intent())
+    amount = intent['slots']['Amount']['value']
+    horse = intent['slots']['Horse']['value']
+    race = intent['slots']['Race']['value']
+    session_attributes["currentBet"] = {"amount": amount, "horse": horse, "race": race}
+    speech_output = "Placing {} ethereum on horse {} and race {}.".format(amount, horse, race)
+    reprompt_text = None
+    # Store bet in database, or Place bet on the smart contract
+    endpoint = url + "/races/"+str(race)+"/bets"
+    user = session['user']['userId']
+    data = urllib.urlencode({'horse_id': horse, 'user_id': user, 'amount': amount})
+    print(endpoint)
+    print(data)
+    content = urllib2.urlopen(url=endpoint, data=data).read()
+    print(content)
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
@@ -170,19 +189,17 @@ def on_intent(intent_request, session):
 
     print("on_intent requestId=" + intent_request['requestId'] +
           ", sessionId=" + session['sessionId'])
-
+    validate_user(session)
     intent = intent_request['intent']
     intent_name = intent_request['intent']['name']
 
     # Dispatch to your skill's intent handlers
     if intent_name == "PlaceBetIntent":
-        return place_bet(intent, session)
+        return place_bet(intent_request, session)
     elif intent_name == "RaceInfoIntent":
         return get_race_info(intent, session)
     elif intent_name == "HorseInfoIntent":
         return get_horse_info(intent, session)
-    elif intent_name == "HorseOddsIntent":
-        return get_horse_odds(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
