@@ -11,6 +11,7 @@ from __future__ import print_function
 import urllib2
 import urllib
 import json
+import dateutil.parser
 
 url = "http://a7fcd589.ngrok.io"
 
@@ -89,20 +90,29 @@ def handle_session_end_request():
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
-def get_next_race():
-    # CALL ENDPOINT TO RETRIEVE next RACE
-    return
 
 def get_race_info(intent, session):
     session_attributes = session.get('attributes', {})
     reprompt_text = None
     should_end_session = False
 
-    next_race = get_next_race()
-    speech_output = "The next race is race number {}. It starts at {} and ends at {}".format(next_race['race_number'],
-        next_race['start_time'], next_race['end_time'])
+    next_race = json.load(urllib2.urlopen(url + "/next_race"))
 
-    seesion_attributes["nextRace"] = next_race
+    parsed_start = dateutil.parser.parse(next_race['start_time'])
+    hour = parsed_start.hour
+    minute = parsed_start.minute
+
+    if 1 <= int(minute) <= 10:
+        speech_output = "The next race is race number {}. It starts at {} oh {}.".format(next_race['race_number'],
+            hour, minute)
+    elif int(minute) == 0:
+        speech_output = "The next race is race number {}. It starts at {} oh clock.".format(next_race['race_number'],
+            hour)
+    else:
+        speech_output = "The next race is race number {}. It starts at {} {}.".format(next_race['race_number'],
+            hour, minute)
+
+    session_attributes["nextRace"] = next_race
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
     # understood, the session will end.
@@ -111,19 +121,20 @@ def get_race_info(intent, session):
 
 def get_horse_info(intent, session):
     session_attributes = session.get('attributes', {})
+    reprompt_text = None
     should_end_session = False
 
-    if 'Race' not in intent['slots']:
-        speech_output = "I'm not sure which race you want information on." \
-                        "Please try again."
-        reprompt_text = "I'm not sure which race you want information on." \
-                        "You can check race information by asking, Which horses are in race 3?"
+    race_number = session_attributes["nextRace"]['race_number']
+    horse_response = json.load(urllib2.urlopen(url+"/races/"+str(race_number)+"/horses"))
 
-    next_race = get_next_race()
-    speech_output = "The horses in race number {} are {}.".format(next_race['race_number'], next_race['horse_list']) 
+    
+    speech_output = "For race number {}, the horses are ".format(race_number)
 
+    for horse in horse_response:
+        speech_output = speech_output + "number {}. {} with {} odds. ".format(horse['id'],horse['name'],horse['odds'])
 
-    return
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
 
 def place_bet(request, session):
     session_attributes = session.get('attributes', {})
