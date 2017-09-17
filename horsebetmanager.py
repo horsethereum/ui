@@ -8,6 +8,11 @@ http://amzn.to/1LGWsLG
 """
 
 from __future__ import print_function
+import urllib2
+import json
+import dateutil.parser
+
+url = "http://a7fcd589.ngrok.io"
 
 
 # --------------- Helpers that build all of the responses ----------------------
@@ -72,8 +77,12 @@ def handle_session_end_request():
         card_title, speech_output, None, should_end_session))
 
 def get_next_race():
-    # CALL ENDPOINT TO RETRIEVE next RACE
-    return
+
+    next_race = urllib2.urlopen(url + "/next_race")
+    next_race = next_race.read()
+    next_race = json.loads(next_race)
+
+    return next_race
 
 def get_race_info(intent, session):
     session_attributes = session.get('attributes', {})
@@ -81,10 +90,22 @@ def get_race_info(intent, session):
     should_end_session = False
 
     next_race = get_next_race()
-    speech_output = "The next race is race number {}. It starts at {} and ends at {}".format(next_race['race_number'],
-        next_race['start_time'], next_race['end_time'])
 
-    seesion_attributes["nextRace"] = next_race
+    parsed_start = dateutil.parser.parse(next_race['start_time'])
+    hour = parsed_start.hour
+    minute = parsed_start.minute
+
+    if 1 <= int(minute) <= 10:
+        speech_output = "The next race is race number {}. It starts at {} oh {}.".format(next_race['race_number'],
+            hour, minute)
+    elif int(minute) == 0:
+        speech_output = "The next race is race number {}. It starts at {} oh clock.".format(next_race['race_number'],
+            hour)
+    else:
+        speech_output = "The next race is race number {}. It starts at {} {}.".format(next_race['race_number'],
+            hour, minute)
+
+    session_attributes["nextRace"] = next_race
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
     # understood, the session will end.
