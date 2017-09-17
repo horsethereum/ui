@@ -136,6 +136,14 @@ def get_horse_info(intent, session):
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
+def get_profit_info(intent, session):
+    should_end_session = False
+    reprompt_text = None
+    user = session['user']['userId']
+    
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
+
 def place_bet(request, session):
     session_attributes = session.get('attributes', {})
     should_end_session = False
@@ -200,6 +208,8 @@ def on_intent(intent_request, session):
         return get_race_info(intent, session)
     elif intent_name == "HorseInfoIntent":
         return get_horse_info(intent, session)
+    elif intent_name == "ProfitIntent":
+        return get_profit_info(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
