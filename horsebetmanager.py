@@ -137,10 +137,19 @@ def get_horse_info(intent, session):
         intent['name'], speech_output, reprompt_text, should_end_session))
 
 def get_profit_info(intent, session):
+    session_attributes = session.get('attributes', {})
     should_end_session = False
     reprompt_text = None
     user = session['user']['userId']
-    
+    data = urllib.urlencode({'user_id': user})
+    print(data)
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    http_request = urllib2.Request(url + "/profile", data=data)
+    http_request.get_method = lambda: 'PUT'
+    content = opener.open(http_request).read()
+    profit = json.loads(content)["profit"]
+    speech_output = "Your profit is {} ether".format(profit)
+
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
