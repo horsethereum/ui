@@ -76,20 +76,13 @@ def handle_session_end_request():
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
-def get_next_race():
-
-    next_race = urllib2.urlopen(url + "/next_race")
-    next_race = next_race.read()
-    next_race = json.loads(next_race)
-
-    return next_race
 
 def get_race_info(intent, session):
     session_attributes = session.get('attributes', {})
     reprompt_text = None
     should_end_session = False
 
-    next_race = get_next_race()
+    next_race = json.load(urllib2.urlopen(url + "/next_race"))
 
     parsed_start = dateutil.parser.parse(next_race['start_time'])
     hour = parsed_start.hour
@@ -114,19 +107,20 @@ def get_race_info(intent, session):
 
 def get_horse_info(intent, session):
     session_attributes = session.get('attributes', {})
+    reprompt_text = None
     should_end_session = False
 
-    if 'Race' not in intent['slots']:
-        speech_output = "I'm not sure which race you want information on." \
-                        "Please try again."
-        reprompt_text = "I'm not sure which race you want information on." \
-                        "You can check race information by asking, Which horses are in race 3?"
+    race_id = session_attributes["nextRace"]['id']
+    horse_response = json.load(urllib2.urlopen(url+"/races/"+str(race_id)+"/horses"))
 
-    next_race = get_next_race()
-    speech_output = "The horses in race number {} are {}.".format(next_race['race_number'], next_race['horse_list']) 
+    
+    speech_output = "For race number {}, the horses are ".format(race_id)
 
+    for horse in horse_response:
+        speech_output = speech_output + "{} {} with odds {} ".format(horse['id'],horse['name'],horse['odds'])
 
-    return
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
 
 def get_horse_odds(intent, session):
     return
