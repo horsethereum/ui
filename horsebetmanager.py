@@ -9,11 +9,11 @@ http://amzn.to/1LGWsLG
 
 from __future__ import print_function
 import urllib2
+import urllib
 import json
 import dateutil.parser
 
 url = "http://a7fcd589.ngrok.io"
-
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -37,6 +37,14 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
         'shouldEndSession': should_end_session
     }
 
+def build_speechlet_response_with_directive_no_intent():
+    return {
+        'outputSpeech': None,
+        'card': None,
+        'reprompt': None,
+        "directives" : [ {"type" : "Dialog.Delegate"} ],
+        'shouldEndSession': False
+    }
 
 def build_response(session_attributes, speechlet_response):
     return {
@@ -47,6 +55,12 @@ def build_response(session_attributes, speechlet_response):
 
 
 # --------------- Functions that control the skill's behavior ------------------
+
+def validate_user(session):
+    user = session['user']['userId']
+    content = urllib2.urlopen(url + "/profile?user_id="+str(user)).read()
+    print(content)
+
 
 def get_welcome_response():
     """ If we wanted to initialize the session to have some attributes we could
@@ -122,40 +136,30 @@ def get_horse_info(intent, session):
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
-def get_horse_odds(intent, session):
-    return
-
-def place_bet(intent, session):
+def place_bet(request, session):
     session_attributes = session.get('attributes', {})
     should_end_session = False
-    if 'Amount' not in intent['slots']:
-        speech_output = "I'm not sure what amount you are trying to bet. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what amount you are trying to bet. " \
-                        "You can place a bet by saying, place two ether on horse three in race five."
-    elif 'Horse' not in intent['slots']:
-        speech_output = "I'm not sure what horse you are trying to bet on. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what horse you are trying to bet on. " \
-                        "You can place a bet by saying, place two ether on horse three in race five."
-    elif 'Race' not in intent['slots']:
-        speech_output = "I'm not sure what race you are trying to bet on. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what race you are trying to bet on. " \
-                        "You can place a bet by saying, place two ether on horse three in race five."
-    else:
-        amount = intent['slots']['Amount']['value']
-        horse = intent['slots']['Horse']['value']
-        race = intent['slots']['Race']['value']
-        session_attributes["currentBet"] = {"amount": amount, "horse": horse, "race": race}
-        speech_output = "Placing {} ethereum on horse {} and race {}.".format(amount, horse, race)
-        reprompt_text = None
-        # Store bet in database, or Place bet on the smart contract
-
-        # speech_output = "Are you sure you want to place {} ethereum on horse {} and race {}?"
-        # reprompt_text = "Are you sure you want to place {} ethereum on horse {} and race {}? " \
-        #                 "Say Yes to confirm."
-        # TODO: implement confirmation step for security
+    intent = request['intent']
+    if request['dialogState'] == 'STARTED':
+        return build_response(session_attributes,
+         build_speechlet_response_with_directive_no_intent())
+    if request['dialogState'] != 'COMPLETED':
+        return build_response(session_attributes,
+         build_speechlet_response_with_directive_no_intent())
+    amount = intent['slots']['Amount']['value']
+    horse = intent['slots']['Horse']['value']
+    race = intent['slots']['Race']['value']
+    session_attributes["currentBet"] = {"amount": amount, "horse": horse, "race": race}
+    speech_output = "Placing {} ethereum on horse {} and race {}.".format(amount, horse, race)
+    reprompt_text = None
+    # Store bet in database, or Place bet on the smart contract
+    endpoint = url + "/races/"+str(race)+"/bets"
+    user = session['user']['userId']
+    data = urllib.urlencode({'horse_id': horse, 'user_id': user, 'amount': amount})
+    print(endpoint)
+    print(data)
+    content = urllib2.urlopen(url=endpoint, data=data).read()
+    print(content)
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
@@ -185,19 +189,17 @@ def on_intent(intent_request, session):
 
     print("on_intent requestId=" + intent_request['requestId'] +
           ", sessionId=" + session['sessionId'])
-
+    validate_user(session)
     intent = intent_request['intent']
     intent_name = intent_request['intent']['name']
 
     # Dispatch to your skill's intent handlers
     if intent_name == "PlaceBetIntent":
-        return place_bet(intent, session)
+        return place_bet(intent_request, session)
     elif intent_name == "RaceInfoIntent":
         return get_race_info(intent, session)
     elif intent_name == "HorseInfoIntent":
         return get_horse_info(intent, session)
-    elif intent_name == "HorseOddsIntent":
-        return get_horse_odds(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
