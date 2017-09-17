@@ -187,7 +187,12 @@ def get_results(intent, session):
 
     race_number = intent['slots']['Race']['value']
     races = json.load(urllib2.urlopen(url+"/races"))
-    results = json.load(urllib2.urlopen(url+"/races/"+str(race_number)+"/horses?results=t"))
+    try:
+        results = json.load(urllib2.urlopen(url+"/races/"+str(race_number)+"/horses?results=t"))
+    except:
+        speech_output = "Race {} is not over yet".format(str(race_number))
+        return build_response(session_attributes, build_speechlet_response(
+            intent['name'], speech_output, reprompt_text, should_end_session))
     speech_output = "The results of race {} are.".format(str(race_number))
     for result in results:
         speech_output = speech_output + " {} came number {}.".format(result['name'],result['finish'])
