@@ -72,9 +72,18 @@
     {
       "name": "WhatResultsIntent",
       "samples": [
-        "What are the results"
+        "What is the result of race {Race}",
+        "Result of race {Race}",
+        "Race {Race} results",
+        "Give me race {Race} results"
       ],
-      "slots": []
+      "slots": [
+        {
+          "name": "Race",
+          "type": "AMAZON.NUMBER",
+          "samples": []
+        }
+      ]
     }
   ],
   "prompts": [

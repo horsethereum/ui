@@ -103,13 +103,13 @@ def get_race_info(intent, session):
     minute = parsed_start.minute
 
     if 1 <= int(minute) <= 10:
-        speech_output = "The next race is race number {}. It starts at {} oh {}.".format(next_race['race_number'],
+        speech_output = "The next race is race number {}. It starts at {} oh {}.".format(next_race['race_id'],
             hour, minute)
     elif int(minute) == 0:
-        speech_output = "The next race is race number {}. It starts at {} oh clock.".format(next_race['race_number'],
+        speech_output = "The next race is race number {}. It starts at {} oh clock.".format(next_race['race_id'],
             hour)
     else:
-        speech_output = "The next race is race number {}. It starts at {} {}.".format(next_race['race_number'],
+        speech_output = "The next race is race number {}. It starts at {} {}.".format(next_race['race_id'],
             hour, minute)
 
     session_attributes["nextRace"] = next_race
@@ -124,10 +124,10 @@ def get_horse_info(intent, session):
     reprompt_text = None
     should_end_session = False
 
-    race_number = session_attributes["nextRace"]['race_number']
+    race_number = session_attributes["nextRace"]['race_id']
     horse_response = json.load(urllib2.urlopen(url+"/races/"+str(race_number)+"/horses"))
 
-    
+
     speech_output = "For race number {}, the horses are ".format(race_number)
 
     for horse in horse_response:
@@ -160,6 +160,20 @@ def place_bet(request, session):
     print(data)
     content = urllib2.urlopen(url=endpoint, data=data).read()
     print(content)
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
+
+def get_results(intent, session):
+    session_attributes = session.get('attributes', {})
+    reprompt_text = None
+    should_end_session = False
+
+    race_number = intent['slots']['Race']['value']
+    races = json.load(urllib2.urlopen(url+"/races"))
+    results = json.load(urllib2.urlopen(url+"/races/"+str(race_number)+"/horses?results=t"))
+    speech_output = "The results of race {} are.".format(str(race_number))
+    for result in results:
+        speech_output = speech_output + " {} came number {}.".format(result['name'],result['finish'])
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
@@ -200,6 +214,8 @@ def on_intent(intent_request, session):
         return get_race_info(intent, session)
     elif intent_name == "HorseInfoIntent":
         return get_horse_info(intent, session)
+    elif intent_name == "WhatResultsIntent":
+        return get_results(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
