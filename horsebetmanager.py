@@ -56,7 +56,7 @@ def get_welcome_response():
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
     reprompt_text = "Please ask me what the next race is by saying, " \
-                    "what is next race."
+                    "what is the next race."
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -71,8 +71,8 @@ def handle_session_end_request():
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
-def get_latest_race():
-    # CALL ENDPOINT TO RETRIEVE LATEST RACE
+def get_next_race():
+    # CALL ENDPOINT TO RETRIEVE next RACE
     return
 
 def get_race_info(intent, session):
@@ -80,11 +80,11 @@ def get_race_info(intent, session):
     reprompt_text = None
     should_end_session = False
 
-    latest_race = get_latest_race()
-    speech_output = "The next race is race number {}. It starts at {} and ends at {}".format(latest_race['race_number'],
-        latest_race['start_time'], latest_race['end_time'])
+    next_race = get_next_race()
+    speech_output = "The next race is race number {}. It starts at {} and ends at {}".format(next_race['race_number'],
+        next_race['start_time'], next_race['end_time'])
 
-    seesion_attributes["latestRace"] = latest_race
+    seesion_attributes["nextRace"] = next_race
     # Setting reprompt_text to None signifies that we do not want to reprompt
     # the user. If the user does not respond or says something that is not
     # understood, the session will end.
@@ -92,6 +92,19 @@ def get_race_info(intent, session):
         intent['name'], speech_output, reprompt_text, should_end_session))
 
 def get_horse_info(intent, session):
+    session_attributes = session.get('attributes', {})
+    should_end_session = False
+
+    if 'Race' not in intent['slots']:
+        speech_output = "I'm not sure which race you want information on." \
+                        "Please try again."
+        reprompt_text = "I'm not sure which race you want information on." \
+                        "You can check race information by asking, Which horses are in race 3?"
+
+    next_race = get_next_race()
+    speech_output = "The horses in race number {} are {}.".format(next_race['race_number'], next_race['horse_list']) 
+
+
     return
 
 def get_horse_odds(intent, session):
@@ -104,17 +117,17 @@ def place_bet(intent, session):
         speech_output = "I'm not sure what amount you are trying to bet. " \
                         "Please try again."
         reprompt_text = "I'm not sure what amount you are trying to bet. " \
-                        "You can place a bet by saying, place two ethereum on horse three and race five."
+                        "You can place a bet by saying, place two ether on horse three in race five."
     elif 'Horse' not in intent['slots']:
         speech_output = "I'm not sure what horse you are trying to bet on. " \
                         "Please try again."
         reprompt_text = "I'm not sure what horse you are trying to bet on. " \
-                        "You can place a bet by saying, place two ethereum on horse three and race five."
+                        "You can place a bet by saying, place two ether on horse three in race five."
     elif 'Race' not in intent['slots']:
         speech_output = "I'm not sure what race you are trying to bet on. " \
                         "Please try again."
         reprompt_text = "I'm not sure what race you are trying to bet on. " \
-                        "You can place a bet by saying, place two ethereum on horse three and race five."
+                        "You can place a bet by saying, place two ether on horse three in race five."
     else:
         amount = intent['slots']['Amount']['value']
         horse = intent['slots']['Horse']['value']
