@@ -136,11 +136,6 @@ def place_bet(intent, session):
         speech_output = "Placing {} ethereum on horse {} and race {}.".format(amount, horse, race)
         reprompt_text = None
         # Store bet in database, or Place bet on the smart contract
-
-        # speech_output = "Are you sure you want to place {} ethereum on horse {} and race {}?"
-        # reprompt_text = "Are you sure you want to place {} ethereum on horse {} and race {}? " \
-        #                 "Say Yes to confirm."
-        # TODO: implement confirmation step for security
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
