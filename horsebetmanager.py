@@ -110,14 +110,14 @@ def get_horse_info(intent, session):
     reprompt_text = None
     should_end_session = False
 
-    race_id = session_attributes["nextRace"]['id']
-    horse_response = json.load(urllib2.urlopen(url+"/races/"+str(race_id)+"/horses"))
+    race_number = session_attributes["nextRace"]['race_number']
+    horse_response = json.load(urllib2.urlopen(url+"/races/"+str(race_number)+"/horses"))
 
     
-    speech_output = "For race number {}, the horses are ".format(race_id)
+    speech_output = "For race number {}, the horses are ".format(race_number)
 
     for horse in horse_response:
-        speech_output = speech_output + "{} {} with odds {} ".format(horse['id'],horse['name'],horse['odds'])
+        speech_output = speech_output + "number {}. {} with {} odds. ".format(horse['id'],horse['name'],horse['odds'])
 
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
